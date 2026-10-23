@@ -6,7 +6,7 @@ with 10°C guide lines, temperature axis, and btop-styled box frames.
 
 import time
 import math
-from typing import List, Dict, Tuple, Optional
+from typing import List, Dict, Tuple, Optional, Any
 from config import resolve_color, RESET_COLOR
 
 # Unicode Braille bitmask mappings:
@@ -64,9 +64,7 @@ class BraillePlotter:
         if plot_width < 10 or plot_height < 4:
             return [" " * plot_width] * plot_height, oldest_time_str, latest_time_str
 
-        # Dynamically adjust temperature range:
-        # Only extend the graph range to 2 degrees above the highest currently
-        # shown graph line and 2 degrees below the lowest currently shown graph line.
+        # 1. Determine raw min/max from displayed temperatures
         displayed_temps: List[float] = []
         for dev in devices:
             if not dev.enabled:
@@ -80,37 +78,63 @@ class BraillePlotter:
         if displayed_temps:
             highest_displayed = max(displayed_temps)
             lowest_displayed = min(displayed_temps)
-            self.temp_max = highest_displayed + 2.0
-            self.temp_min = lowest_displayed - 2.0
         else:
-            self.temp_min = 20.0
-            self.temp_max = 50.0
+            highest_displayed = 50.0
+            lowest_displayed = 20.0
 
+        data_span = max(highest_displayed - lowest_displayed, 1.0)
+
+        # 2. Even Y-axis spacing calculation
+        # Choose temperature step for guide lines (10°C standard, 5°C if tight range, 20°C if huge)
+        if data_span <= 14.0 and plot_height >= 10:
+            step = 5.0
+        elif (plot_height - 1) * 5.0 < data_span:
+            step = 20.0
+        else:
+            step = 10.0
+
+        # S is the number of character rows between adjacent guide lines.
+        # S is strictly an integer >= 1, ensuring 100% equal distance between all guide lines.
+        max_S = max(1, int((plot_height - 1) * step / (data_span + 2.0)))
+        S = max(1, max_S)
+        while (plot_height - 1) * (step / S) < data_span:
+            step *= 2.0
+            S = max(1, int((plot_height - 1) * step / (data_span + 2.0)))
+
+        deg_per_row = step / S
+        mid_temp = (lowest_displayed + highest_displayed) / 2.0
+        ref_marker = round(mid_temp / step) * step
+
+        # Determine reference marker row so data is comfortably in bounds
+        min_r = math.ceil((highest_displayed - ref_marker) / deg_per_row)
+        max_r = math.floor((plot_height - 1) - (ref_marker - lowest_displayed) / deg_per_row)
+
+        if min_r <= max_r:
+            ideal_r = (plot_height - 1) / 2.0
+            r_ref = round(max(min_r, min(max_r, ideal_r)))
+        else:
+            r_ref = round((plot_height - 1) / 2.0)
+
+        self.temp_min = ref_marker - (plot_height - 1 - r_ref) * deg_per_row
+        self.temp_max = ref_marker + r_ref * deg_per_row
         temp_span = self.temp_max - self.temp_min
         if temp_span <= 0.001:
             temp_span = 4.0
             self.temp_max = self.temp_min + 4.0
 
+        # Guide line rows: r = r_ref - k * S
+        # Since r_ref and S are integers, r is ALWAYS an integer and spacing is exactly S rows
+        guide_rows: Dict[int, int] = {}  # char_row -> temperature
+        min_k = math.ceil((r_ref - (plot_height - 1)) / S)
+        max_k = math.floor(r_ref / S)
+        for k in range(min_k, max_k + 1):
+            deg = int(round(ref_marker + k * step))
+            r = r_ref - k * S
+            guide_rows[r] = deg
+
         # Sub-pixel dimensions (2 dots per col, 4 dots per row)
         sub_w = plot_width * 2
         sub_h = plot_height * 4
-
-        # Cell grid buffers
-        # cell_mask[r][c] = integer bitmask of dots
-        cell_mask = [[0 for _ in range(plot_width)] for _ in range(plot_height)]
-        # cell_color[r][c] = ANSI color sequence for the cell
-        cell_color = [["" for _ in range(plot_width)] for _ in range(plot_height)]
-
-        # Determine which character rows correspond to 10°C intervals
-        # Markers (e.g. 40, 50, 60) within existing current graph line temperatures
-        guide_rows: Dict[int, int] = {}  # char_row -> temperature
-        start_deg = int(math.ceil(self.temp_min / 10.0)) * 10
-        end_deg = int(math.floor(self.temp_max / 10.0)) * 10
-        for temp_deg in range(start_deg, end_deg + 1, 10):
-            norm = (temp_deg - self.temp_min) / temp_span
-            r = round((1.0 - norm) * (plot_height - 1))
-            if 0 <= r < plot_height and r not in guide_rows:
-                guide_rows[r] = temp_deg
 
         # Helper to map temperature to sub-row y
         def temp_to_sub_y(temp: float) -> int:
@@ -118,43 +142,17 @@ class BraillePlotter:
             norm = max(0.0, min(1.0, norm))
             return int((1.0 - norm) * (sub_h - 1))
 
-        # Helper to set a sub-pixel dot
-        def set_dot(x: int, y: int, color_code: str):
-            if 0 <= x < sub_w and 0 <= y < sub_h:
-                c = x // 2
-                r = y // 4
-                dx = x % 2
-                dy = y % 4
-                cell_mask[r][c] |= BRAILLE_DOT_MAP[(dx, dy)]
-                cell_color[r][c] = color_code
+        # Collect Bresenham line points for each enabled sensor without vertical distortion
+        cell_devs: Dict[Tuple[int, int], List[int]] = {}
+        dev_cell_dots: Dict[Tuple[int, int, int], List[Tuple[int, int]]] = {}
+        dev_colors: Dict[int, str] = {}
 
-        # Helper to draw a continuous line segment between two sub-pixels
-        def draw_line(x0: int, y0: int, x1: int, y1: int, color_code: str):
-            dx = abs(x1 - x0)
-            dy = abs(y1 - y0)
-            sx = 1 if x0 < x1 else -1
-            sy = 1 if y0 < y1 else -1
-            err = dx - dy
-            curr_x, curr_y = x0, y0
-            while True:
-                set_dot(curr_x, curr_y, color_code)
-                if curr_x == x1 and curr_y == y1:
-                    break
-                e2 = 2 * err
-                if e2 > -dy:
-                    err -= dy
-                    curr_x += sx
-                if e2 < dx:
-                    err += dx
-                    curr_y += sy
-
-        # Plot curves for each enabled sensor
-        for dev in devices:
+        for dev_idx, dev in enumerate(devices):
             if not dev.enabled or not dev.history:
                 continue
 
             color_code = dev.get_color_code()
-            # Extract readings within [start_time, now]
+            dev_colors[dev_idx] = color_code
             history_pts = list(dev.history)
             if not history_pts:
                 continue
@@ -164,16 +162,12 @@ class BraillePlotter:
             for t_val, temp_val in history_pts:
                 if t_val < start_time:
                     continue
-                # Map time to sub-x
-                if duration_seconds > 0:
-                    fraction = (t_val - start_time) / duration_seconds
-                else:
-                    fraction = 1.0
+                fraction = (t_val - start_time) / duration_seconds if duration_seconds > 0 else 1.0
                 x = int(fraction * (sub_w - 1))
                 y = temp_to_sub_y(temp_val)
                 pixel_pts.append((x, y))
 
-            # If there is only one reading or history is recent, extend to current time
+            # Extend to current time if needed
             if history_pts and history_pts[-1][0] < now:
                 latest_x = sub_w - 1
                 latest_y = temp_to_sub_y(history_pts[-1][1])
@@ -183,9 +177,57 @@ class BraillePlotter:
             for i in range(len(pixel_pts) - 1):
                 x0, y0 = pixel_pts[i]
                 x1, y1 = pixel_pts[i + 1]
-                draw_line(x0, y0, x1, y1, color_code)
+                dx = abs(x1 - x0)
+                dy = abs(y1 - y0)
+                sx = 1 if x0 < x1 else -1
+                sy = 1 if y0 < y1 else -1
+                err = dx - dy
+                curr_x, curr_y = x0, y0
+                while True:
+                    if 0 <= curr_x < sub_w and 0 <= curr_y < sub_h:
+                        r = curr_y // 4
+                        c = curr_x // 2
+                        cell = (r, c)
+                        if cell not in cell_devs:
+                            cell_devs[cell] = []
+                        if dev_idx not in cell_devs[cell]:
+                            cell_devs[cell].append(dev_idx)
+                        key = (dev_idx, r, c)
+                        if key not in dev_cell_dots:
+                            dev_cell_dots[key] = []
+                        dev_cell_dots[key].append((curr_x, curr_y))
 
-        # Assemble formatted rows with 10°C markers on both left and right sides
+                    if curr_x == x1 and curr_y == y1:
+                        break
+                    e2 = 2 * err
+                    if e2 > -dy:
+                        err -= dy
+                        curr_x += sx
+                    if e2 < dx:
+                        err += dx
+                        curr_y += sy
+
+        # Cell grid buffers
+        cell_mask = [[0 for _ in range(plot_width)] for _ in range(plot_height)]
+        cell_color = [["" for _ in range(plot_width)] for _ in range(plot_height)]
+
+        # Render cells: when multiple devices track at the same temperature (occupy same cell),
+        # alternate which device's color appears horizontally (2 dots per cell) with no vertical overlap.
+        for (r, c), devs_in_cell in cell_devs.items():
+            if len(devs_in_cell) == 1:
+                active_dev = devs_in_cell[0]
+            else:
+                active_dev = devs_in_cell[c % len(devs_in_cell)]
+
+            dots = dev_cell_dots.get((active_dev, r, c), [])
+            col = dev_colors.get(active_dev, "")
+            for (x, y) in dots:
+                dx = x % 2
+                dy = y % 4
+                cell_mask[r][c] |= BRAILLE_DOT_MAP[(dx, dy)]
+                cell_color[r][c] = col
+
+        # Assemble formatted rows with guide markers on both left and right sides
         rows: List[str] = []
         for r in range(plot_height):
             # Left and right axis labels

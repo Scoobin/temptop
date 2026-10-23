@@ -99,6 +99,8 @@ nix develop
 
 ---
 
+=======
+
 ### CLI Options
 
 ```

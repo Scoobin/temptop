@@ -589,3 +589,29 @@ class SensorManager:
                 dev.color = COLOR_NAMES[color_idx % len(COLOR_NAMES)]
                 color_idx += 1
             self.config.reset_to_defaults()
+
+    def move_sensor(self, dev_id: str, direction: int) -> bool:
+        """Move a sensor up (direction=-1) or down (direction=+1) in the display order.
+        Returns True if the move was performed."""
+        with self.lock:
+            keys = list(self.devices.keys())
+            if dev_id not in keys:
+                return False
+            idx = keys.index(dev_id)
+            new_idx = idx + direction
+            if new_idx < 0 or new_idx >= len(keys):
+                return False
+            # Swap in the ordered dict by rebuilding it
+            keys[idx], keys[new_idx] = keys[new_idx], keys[idx]
+            new_devices: Dict[str, SensorDevice] = {}
+            for k in keys:
+                new_devices[k] = self.devices[k]
+            self.devices = new_devices
+            # Also reorder config.devices to persist the order
+            new_cfg_devices: Dict[str, Any] = {}
+            for k in keys:
+                if k in self.config.devices:
+                    new_cfg_devices[k] = self.config.devices[k]
+            self.config.devices = new_cfg_devices
+            self.config.save()
+            return True

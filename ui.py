@@ -434,6 +434,14 @@ class TempTopApp:
                 curr_idx = 0
             new_color = COLOR_NAMES[(curr_idx + 1) % len(COLOR_NAMES)]
             self.sensor_mgr.set_sensor_color(curr_dev.device_id, new_color)
+        elif key == "w":
+            # Move sensor up in display order
+            if self.sensor_mgr.move_sensor(curr_dev.device_id, -1):
+                self.selected_dev_index = max(0, self.selected_dev_index - 1)
+        elif key == "s":
+            # Move sensor down in display order
+            if self.sensor_mgr.move_sensor(curr_dev.device_id, +1):
+                self.selected_dev_index = min(len(dev_list) - 1, self.selected_dev_index + 1)
         elif key in ("\x12", "D"):
             # Reset all defaults
             self.ui_mode = "CONFIRM_RESET"
@@ -642,8 +650,8 @@ class TempTopApp:
             col_width = inner_w // k
             all_fit = True
             for dev in dev_list:
-                alarm_extra = 6 if dev.alarm_enabled else 0
-                fixed_w = 22 + alarm_extra
+                # Fixed overhead: [N]=3 + spaces=3 + bullet=1 + alarm_icon=3 + temp=6 + max=5 + spacing=3 = 24
+                fixed_w = 24
                 needed = fixed_w + visible_len(dev.display_name)
                 if needed > col_width:
                     all_fit = False
@@ -680,44 +688,45 @@ class TempTopApp:
             hotkey = f"{i+1}" if i < 9 else " "
             color_code = dev.get_color_code()
 
-            # Status bullet & checkbox
+            # Status bullet (no checkbox — disabled sensors are already hidden)
             if dev.enabled:
                 bullet = f"{color_code}●{RESET_COLOR}"
-                chk = f"{C_KEY}✓{RESET_COLOR}"
             else:
                 bullet = f"{C_DIM}○{RESET_COLOR}"
-                chk = f"{C_DIM} {RESET_COLOR}"
 
             # Temperature values: current temp in bright orange, session max temp in dark red
             temp_str = f"{dev.current_temp:4.1f}°" if dev.current_temp is not None else " N/A "
             max_str = f"M:{dev.session_max_temp:2.0f}°" if dev.session_max_temp is not None else "M:--"
 
-            # Alarm indicator: only show if enabled, otherwise show none to reduce clutter
+            # Alarm indicator: dark grey icon only (no temp number), between name and current temp
+            C_ALARM_ICON = "\033[38;2;100;105;115m"  # Dark grey
             if dev.alarm_enabled:
                 if dev.is_alarming():
-                    alarm_badge = f" {C_ALARM_WARN}🚨{dev.alarm_threshold:.0f}°{RESET_COLOR}"
+                    alarm_icon = f" {C_ALARM_WARN}🔔{RESET_COLOR}"
                 else:
-                    alarm_badge = f" {C_HIGHLIGHT}🔔{dev.alarm_threshold:.0f}°{RESET_COLOR}"
+                    alarm_icon = f" {C_ALARM_ICON}🔔{RESET_COLOR}"
             else:
-                alarm_badge = ""
+                alarm_icon = "   "  # 3 chars to match the icon width (space + 2-wide emoji)
 
             hk_badge = f"{C_KEY}[{hotkey}]{RESET_COLOR}" if hotkey != " " else "   "
 
-            fixed_overhead = 22 + visible_len(alarm_badge)
+            # Fixed overhead: " [N] ● <name> <alarm_icon> <temp> <max>"
+            # [N]=3 + spaces=3 + bullet=1 + alarm_icon=3 + temp=6 + max=5 + spacing=3 = 24
+            fixed_overhead = 24
             name_budget = max(4, col_width - fixed_overhead)
             disp_name = truncate_visible(dev.display_name, name_budget)
             disp_padded = pad_visible(disp_name, name_budget)
 
-            badge = f" {hk_badge} {chk} {bullet} {C_TEXT}{disp_padded}{RESET_COLOR} {C_CURR_TEMP}{temp_str:>6}{RESET_COLOR} {C_MAX_TEMP}{max_str:>5}{RESET_COLOR}{alarm_badge}"
+            badge = f" {hk_badge} {bullet} {C_TEXT}{disp_padded}{RESET_COLOR}{alarm_icon} {C_CURR_TEMP}{temp_str:>6}{RESET_COLOR} {C_MAX_TEMP}{max_str:>5}{RESET_COLOR}"
             badge = pad_visible(truncate_visible(badge, col_width), col_width)
             badges.append(badge)
 
-        # Distribute into rows in natural row-major order:
+        # Distribute into rows in column-major order (down then across):
         rows: List[str] = []
         for r in range(max_rows):
             row_items: List[str] = []
             for c in range(num_columns):
-                idx = r * num_columns + c
+                idx = c * max_rows + r
                 if idx < len(badges):
                     row_items.append(badges[idx])
                 else:
@@ -803,7 +812,7 @@ class TempTopApp:
         # Header
         modal_lines.append(self._modal_top_border("Device Manager & Sensor Settings", modal_w, C_MODAL_BORDER, C_TITLE))
         modal_lines.append(f"{C_MODAL_BORDER}│{RESET_COLOR}{C_DIM}{pad_visible(truncate_visible('  Navigate: [↑/↓]  Toggle: [Space]  Rename: [R]  Alarm: [A]', inner_w), inner_w)}{RESET_COLOR}{C_MODAL_BORDER}│{RESET_COLOR}")
-        modal_lines.append(f"{C_MODAL_BORDER}│{RESET_COLOR}{C_DIM}{pad_visible(truncate_visible('  Threshold: [+/-]  Cycle Color: [C]  Reset: [Bksp]  Exit: [Esc/M]', inner_w), inner_w)}{RESET_COLOR}{C_MODAL_BORDER}│{RESET_COLOR}")
+        modal_lines.append(f"{C_MODAL_BORDER}│{RESET_COLOR}{C_DIM}{pad_visible(truncate_visible('  Threshold: [+/-]  Color: [C]  Order: [W/S]  Reset: [Bksp]  Exit: [Esc/M]', inner_w), inner_w)}{RESET_COLOR}{C_MODAL_BORDER}│{RESET_COLOR}")
         modal_lines.append(f"{C_MODAL_BORDER}├{'─' * inner_w}┤{RESET_COLOR}")
 
         # List rows

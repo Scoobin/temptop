@@ -2,6 +2,28 @@
 # Terminal temperature monitoring program by Scoobin.
 
 
+## [0.5.0]
+
+### Added
+
+- Ability to swap order of devices on the main screen (done through Device Manager)
+
+### Changed
+
+- Allowed overlapping dots to alternate their plot lines instead of one just hiding the one behind it. 
+- Replaced yellow alarm icons with dark grey (red when alarm is active). 
+- Moved alarm icon from end of device line after temps to between device name and current temp so that temps without alarms set stay aligned.
+- Made Y-axis (temp) 10 degree guide lines more symmetrical/evenly spaced.
+- Changed sensor numbering to column-major (down then across) from row-major (across then down).
+
+### Fixed
+
+- Bug fixed in plotter.py file.
+
+### Removed
+
+- Ticks beside devices removed, since devices are now hidden when unselected to tidy up the main screen.
+
 ## [0.4.1]
 
 ### Fixed
