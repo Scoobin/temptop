@@ -3,23 +3,17 @@
 > A Linux terminal hardware temperature monitor and Braille grapher inspired by **Psensor** and **btop**.
 
 ```
-╭─ Temp Top ─┤ LIVE ├──────────────────────┤ Rate: 2000ms [+/-] ├─┤ Time: 5m [</>] ├─╮
-│100°C┤┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄│
-│ 90°C┤┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄│
-│ 80°C┤┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄│
-│ 70°C┤┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄│
-│ 60°C┤┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄⣀⣀⣀⣀⠤⠤⠤⠔⠒⠒⠒⠉⠉⠉┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄│
-│ 50°C┤┄┄┄┄⢀⣀⣀⣀⠤⠤⠤⠔⠒⠒⠊⠉⠉⠉┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄│
-│ 40°C┤⠒⠊⠉⠉⠁┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄│
-│ 30°C┤┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄│
-│ 20°C┤┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄│
+╭─ Temp Top ──────────────────────────────────┤ Rate: 2000ms [+/-] ├─┤ Time: 5m [</>] ├─╮
+│ 68°C┤┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄│
+│ 64°C┤┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄⣀⣀⣀⣀⠤⠤⠤⠔⠒⠒⠒⠉⠉⠉┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄│
+│ 60°C┤┄┄┄┄⢀⣀⣀⣀⠤⠤⠤⠔⠒⠒⠊⠉⠉⠉┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄│
+│ 56°C┤⠒⠊⠉⠉⠁┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄│
+│ 52°C┤┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄│
 ├─ 09:35:16 ────────────────────────────────────────────────────────── 09:40:16 [5m] ─┤
-│ [1] [✓] ● CPU (Tctl)       60.0°C Max: 64° [🔕]  [6] [✓] ● NVMe 0 (Sensor 1)  39.9°C Max: 41° [🔕]│
-│ [2] [✓] ● GPU (edge)       51.0°C Max: 53° [🔕]  [7] [✓] ● NVMe 0 (Sensor 2)  32.9°C Max: 35° [🔕]│
-│ [3] [✓] ● NVMe 1 (Overall) 30.9°C Max: 33° [🔕]  [8] [✓] ● WiFi (temp1)       30.0°C Max: 32° [🔕]│
-│ [4] [✓] ● NVMe 1 (Sensor 1)30.9°C Max: 33° [🔕]  [9] [✓] ● Motherboard (temp1)64.0°C Max: 66° [🔕]│
-│ [5] [✓] ● NVMe 0 (Overall) 39.9°C Max: 41° [🔕]                                                   │
-╰─ [1-9] Toggle  [+/-] Rate  [</>] Time  [M] Sensors  [D] Reset  [Q] Quit ──────────────────╯
+│ [1] [✓] ● CPU (Tctl)       60.0° M:64°  [3] [✓] ● GPU (RTX 3060)     52.0° M:55°   │
+│ [2] [✓] ● NVMe (Overall)   41.0° M:44°  [4] [✓] ● Motherboard        64.0° M:66°   │
+│                                                                                    │
+╰─ [1-9] Toggle  [+/-] Rate  [</>] Time  [M] Sensors  [D] Reset  [Q] Quit ───────────╯
 ```
 
 ---
@@ -27,54 +21,54 @@
 ## Features
 
 - **Braille Multi-Curve Plotting**: Renders smooth, continuous curves using Unicode Braille characters (`U+2800` through `U+28FF`) with sub-pixel Bresenham line interpolation.
-- **lm-sensors & sysfs Integration**: Auto-detects all hardware devices containing temperature monitoring data (`sensors -j`), with direct `/sys/class/hwmon` acceleration for sub-millisecond, low-CPU sampling.
-- **Dynamic Layout & Window Resizing**: Automatically handles `SIGWINCH` resize events to maximize screen space; the graph occupies almost the entire terminal window with btop-style rounded box borders.
-- **Temperature Axis & Guides**:
-  - Y-axis labeled from **20°C to 100°C** in 10°C intervals.
-  - Consistent **dark grey guide lines** (`┄`) spaced at 10°C intervals across the graph.
+- **Hardware Integration & Zero-Overhead Polling**:
+  - **Linux sysfs & lm-sensors**: Auto-detects all CPUs, motherboards, WiFi, and NVMe drives via direct `/sys/class/hwmon` acceleration with sub-millisecond reads.
+  - **Nvidia GPU Support**: Direct NVML library bindings via standard library `ctypes` (`libnvidia-ml.so`) with fallback to `nvidia-smi`. Fully synchronized with the user-selected update frequency.
+- **Dynamic Temperature Range (±2°C padding)**:
+  - Graph Y-axis strictly bounds precisely **+2°C above the highest** currently shown curve and **-2°C below the lowest** currently shown curve to maximize resolution and contrast.
+- **Configurable Time Horizons**:
+  - 10 selectable plot durations: **30s, 1m, 2m, 3m, 5m, 10m, 15m, 20m, 30m, and 60m**.
 - **Accurate Time Range Tracking**:
-  - Bottom-left shows the time when the oldest visible data point was sampled.
-  - Bottom-right shows the current time (latest visible data).
-  - Far-right end displays the length of time currently being graphed (e.g. `[5m 00s]`).
+  - Bottom-left shows the exact timestamp when the oldest visible data point was sampled.
+  - Bottom-right shows the latest timestamp and active window duration (e.g. `[20m]`).
 - **Interactive Sensor Key & Controls**:
-  - Toggle individual sensors on/off in real-time by pressing `1` through `9` or using the spacebar in the manager.
-  - Shows current temperature and session maximum recorded temperature (`Max: XX°C`).
-  - Distinct colors for every device line.
-- **Configurable Sample Frequency & Graph Window**:
-  - Sample frequency defaults to **2000 ms**, adjustable in **250 ms increments** (down to **100 ms**).
-  - Total graphed plot time defaults to **5 minutes**, adjustable up and down (**30s to 60m**).
-- **Alarm System**:
-  - Beeps once per **10 seconds** via terminal bell (`\a`) and system audio when a device reaches its configured threshold.
-  - Automatically ceases beeping when temperatures drop below the threshold.
-  - Alarms are disabled by default and can be enabled and configured per device.
-- **Plain-Language Config File**:
-  - Stored at `~/.config/temp-top/config.toml`.
-  - Clearly commented TOML format.
-  - Preserves original hardware names (`default_name`) right beside custom names (`display_name`).
-  - Allows returning to default names anytime.
-  - Persists settings across runs.
-  - Key combo `D` or `Ctrl+R` returns all settings to factory defaults.
+  - Hotkeys `1` through `9` toggle sensor curves immediately.
+  - **Color Accents**: Current temperature rendered in **bright orange**, session maximum recorded heat (`M:XX°`) in **darker red**.
+  - **Disabled Sensor Filtering**: Sensors that are disabled are excluded from the main key on subsequent runs, reclaiming vertical rows for the graph.
+  - **Dynamic Column Packing**: Automatically packs more devices per line when names are shortened by the user.
+  - **Clean Spacing**: One blank separator row between sensor devices and bottom navigation controls.
+- **Full-Featured Device Manager (`M` or `Enter`)**:
+  - Seamless navigation with `Up`/`Down`, `k`/`j`, `PageUp`/`PageDown`, and `Home`/`End`.
+  - Live graph display freezes cleanly while modals are open; upon exiting, graph refreshes with all background data gathered while in the menu.
+  - Rename sensors, toggle visibility, adjust alarm thresholds, and cycle colors.
+- **Audible & Visual Alarms**:
+  - Optional terminal bell (`\a`) and alert header banner when any sensor exceeds its threshold.
+- **Configuration File**:
+  - Stored at `~/.config/temptop/config.py` with automatic migration support.
 
 ---
 
 ## Installation & Quick Start
 
 ### Direct Execution
-Temp Top is self-contained and uses standard Python:
+Temp Top is self-contained with no external Python library dependencies:
 
 ```bash
-# Run directly from the scratch directory
-cd /home/sam/.gemini/antigravity-ide/scratch/temp_top
-./temp_top.py
+# Run directly from the temptop directory
+cd /home/sam/.gemini/antigravity-ide/scratch/temptop
+./temptop.py
 
-# Or run using the symlink in ~/.local/bin
-temp-top
+# Or via the executable symlink
+./temptop
+
+# Or run globally via PATH (~/.local/bin)
+temptop
 ```
 
 ### CLI Options
 
 ```
-temp-top [options]
+temptop [options]
 
 Options:
   -c, --config PATH     Path to custom configuration file
@@ -93,7 +87,7 @@ Options:
 |-----|--------|
 | `1` – `9` | **Toggle Sensor**: Immediately show/hide sensors 1 through 9 |
 | `+` / `-` | **Sample Frequency**: Increase / decrease sample interval by 250ms (down to 100ms) |
-| `>` / `<` (or `w` / `W`) | **Plot Duration**: Increase / decrease total graphed plot time (30s, 1m, 2m, 3m, 5m, 10m, 15m, 30m, 60m) |
+| `>` / `<` (or `w` / `W`) | **Plot Duration**: Cycle plot time window (30s, 1m, 2m, 3m, 5m, 10m, 15m, 20m, 30m, 60m) |
 | `M` or `Enter` | **Device Manager**: Open interactive menu to rename sensors, toggle alarms, edit thresholds, and change colors |
 | `P` | **Pause / Resume**: Freeze live graph plotting for inspection |
 | `S` | **Save Settings**: Force save current settings to configuration file |
@@ -107,19 +101,21 @@ Options:
 
 When inside the Device Manager:
 - `Up` / `Down` (`k` / `j`): Select sensor
+- `PageUp` / `PageDown`: Jump by 5 sensors
+- `Home` / `End`: Jump to first / last sensor
 - `Space`: Toggle visibility on graph
 - `R`: Rename sensor (opens interactive text entry prompt)
 - `Backspace`: Revert sensor name back to default hardware name
 - `A`: Toggle threshold alarm on/off
 - `+` / `-` (`Right` / `Left`): Adjust alarm threshold temperature (±1°C)
 - `C`: Cycle line color through the 16-color palette
-- `Esc` / `M`: Close manager and return to graph
+- `Enter` / `Esc` / `M` / `Q`: Close manager and return to graph
 
 ---
 
-## Configuration File (`~/.config/temp-top/config.toml`)
+## Configuration File (`~/.config/temptop/config.py`)
 
-Temp Top creates a plain-language TOML configuration file on first launch:
+Temp Top automatically creates and updates its configuration file:
 
 ```toml
 # ==============================================================================
@@ -131,7 +127,7 @@ Temp Top creates a plain-language TOML configuration file on first launch:
 # Sensor sampling update frequency in milliseconds (default: 2000 ms, min: 100 ms)
 update_frequency_ms = 2000
 
-# Total graphed plot time in seconds (default: 300 seconds = 5 minutes)
+# Total graphed plot time in seconds (e.g. 300 for 5m, 1200 for 20m)
 plot_time_seconds = 300
 
 # Terminal sound / bell alarm enabled
@@ -140,37 +136,23 @@ sound_alarm_enabled = true
 # Beep cooldown interval in seconds (default: 10 seconds between alarm beeps)
 alarm_beep_interval_seconds = 10
 
-# Graph temperature Y-axis bounds in degrees Celsius
-temp_axis_min = 20.0
-temp_axis_max = 100.0
-
 # ==============================================================================
 # HARDWARE TEMPERATURE DEVICES
-# ------------------------------------------------------------------------------
-# All devices containing temperature sensors are listed below.
-#
-# Fields for each device:
-#   default_name    : Original hardware name detected by lm-sensors (reference)
-#   display_name    : Custom user-chosen name (editable; return to default anytime)
-#   enabled         : true to plot on graph, false to hide
-#   color           : Color of the graph curve and sensor key badge
-#   alarm_enabled   : true to sound alarm when threshold is reached (default: false)
-#   alarm_threshold : Threshold temperature in °C for alarm (default: 85.0)
 # ==============================================================================
 
 [devices."k10temp-pci-00c3.Tctl"]
 default_name = "k10temp-pci-00c3 Tctl (PCI adapter)"
-display_name = "CPU (Tctl)"
+display_name = "CPU"
 enabled = true
 color = "cyan"
 alarm_enabled = false
 alarm_threshold = 85.0
 
-[devices."amdgpu-pci-0600.edge"]
-default_name = "amdgpu-pci-0600 edge (PCI adapter)"
-display_name = "GPU (edge)"
+[devices."nvidia.0"]
+default_name = "NVIDIA GeForce RTX 3060 Laptop GPU"
+display_name = "GPU (RTX 3060)"
 enabled = true
-color = "purple"
+color = "green"
 alarm_enabled = false
-alarm_threshold = 85.0
+alarm_threshold = 80.0
 ```

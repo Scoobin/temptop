@@ -71,8 +71,8 @@ def resolve_color(color_spec: str) -> str:
     return COLOR_PALETTE["cyan"][1]
 
 
-DEFAULT_CONFIG_DIR = os.path.expanduser("~/.config/temp-top")
-DEFAULT_CONFIG_PATH = os.path.join(DEFAULT_CONFIG_DIR, "config.toml")
+DEFAULT_CONFIG_DIR = os.path.expanduser("~/.config/temptop")
+DEFAULT_CONFIG_PATH = os.path.join(DEFAULT_CONFIG_DIR, "config.py")
 
 DEFAULT_GENERAL_SETTINGS = {
     "update_frequency_ms": 2000,       # Sample rate (default: 2000ms, min: 100ms)
@@ -84,7 +84,22 @@ DEFAULT_GENERAL_SETTINGS = {
 
 class Config:
     def __init__(self, config_path: Optional[str] = None):
-        self.config_path = os.path.abspath(os.path.expanduser(config_path or DEFAULT_CONFIG_PATH))
+        if config_path:
+            self.config_path = os.path.abspath(os.path.expanduser(config_path))
+        else:
+            # Check for current default or existing legacy configuration
+            candidate_paths = [
+                DEFAULT_CONFIG_PATH,
+                os.path.join(DEFAULT_CONFIG_DIR, "config.toml"),
+                os.path.expanduser("~/.config/temp-top/config.py"),
+                os.path.expanduser("~/.config/temp-top/config.toml"),
+            ]
+            chosen = DEFAULT_CONFIG_PATH
+            for p in candidate_paths:
+                if os.path.isfile(p):
+                    chosen = p
+                    break
+            self.config_path = os.path.abspath(chosen)
         self.general = dict(DEFAULT_GENERAL_SETTINGS)
         # devices dict: device_id -> dict of properties
         self.devices: Dict[str, Dict[str, Any]] = {}

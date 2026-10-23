@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "temp-top"
+name = "temptop"
 version = "1.0.0"
 description = "A Linux terminal hardware temperature monitor and Braille grapher inspired by Psensor and btop"
 readme = "README.md"
@@ -30,4 +30,5 @@ classifiers = [
 ]
 
 [project.scripts]
-temp-top = "temp_top:main"
+temptop = "temptop:main"
+temp-top = "temptop:main"

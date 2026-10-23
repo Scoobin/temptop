@@ -4,7 +4,7 @@ Temp Top - Hardware Temperature Monitor and Braille Grapher
 Inspired by Psensor and btop.
 
 Usage:
-  temp-top [options]
+  temptop [options]
 
 Options:
   -c, --config PATH     Path to custom configuration file

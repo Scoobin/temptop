@@ -65,8 +65,8 @@ class BraillePlotter:
             return [" " * plot_width] * plot_height, oldest_time_str, latest_time_str
 
         # Dynamically adjust temperature range:
-        # Only ever show 5 degrees above the highest displayed temp on the graph
-        # and 5 degrees below the lowest displayed temp at any time.
+        # Only extend the graph range to 2 degrees above the highest currently
+        # shown graph line and 2 degrees below the lowest currently shown graph line.
         displayed_temps: List[float] = []
         for dev in devices:
             if not dev.enabled:
@@ -80,16 +80,16 @@ class BraillePlotter:
         if displayed_temps:
             highest_displayed = max(displayed_temps)
             lowest_displayed = min(displayed_temps)
-            self.temp_max = highest_displayed + 5.0
-            self.temp_min = lowest_displayed - 5.0
+            self.temp_max = highest_displayed + 2.0
+            self.temp_min = lowest_displayed - 2.0
         else:
             self.temp_min = 20.0
             self.temp_max = 50.0
 
         temp_span = self.temp_max - self.temp_min
         if temp_span <= 0.001:
-            temp_span = 10.0
-            self.temp_max = self.temp_min + 10.0
+            temp_span = 4.0
+            self.temp_max = self.temp_min + 4.0
 
         # Sub-pixel dimensions (2 dots per col, 4 dots per row)
         sub_w = plot_width * 2

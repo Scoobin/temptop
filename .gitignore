@@ -1,0 +1,8 @@
+# Python cache #
+################
+*.pyc
+temptop
+
+# Cache Directories #
+#####################
+__pycache__

@@ -10,6 +10,7 @@ import json
 import time
 import subprocess
 import threading
+import ctypes
 from collections import deque
 from typing import Dict, List, Optional, Tuple, Any
 
@@ -74,6 +75,110 @@ class SensorDevice:
         return resolve_color(self.color)
 
 
+class NvidiaMonitor:
+    """
+    Monitors Nvidia GPU temperatures using NVML (via ctypes libnvidia-ml.so)
+    with automatic fallback to nvidia-smi if NVML library is unavailable.
+    """
+    def __init__(self):
+        self.nvml_loaded = False
+        self.nvml_lib = None
+        self.nvml_devices: List[Tuple[int, Any, str]] = []  # (index, handle, name)
+        self.has_nvidia_smi = False
+        self._init_nvml()
+        if not self.nvml_loaded:
+            self._check_nvidia_smi()
+
+    def _init_nvml(self):
+        try:
+            self.nvml_lib = ctypes.CDLL("libnvidia-ml.so")
+            if self.nvml_lib.nvmlInit_v2() == 0:
+                count = ctypes.c_uint()
+                if self.nvml_lib.nvmlDeviceGetCount_v2(ctypes.byref(count)) == 0:
+                    for i in range(count.value):
+                        handle = ctypes.c_void_p()
+                        if self.nvml_lib.nvmlDeviceGetHandleByIndex_v2(i, ctypes.byref(handle)) == 0:
+                            name_buf = ctypes.create_string_buffer(96)
+                            self.nvml_lib.nvmlDeviceGetName(handle, name_buf, 96)
+                            name = name_buf.value.decode("utf-8", errors="replace").strip()
+                            self.nvml_devices.append((i, handle, name))
+                    if self.nvml_devices:
+                        self.nvml_loaded = True
+        except Exception:
+            self.nvml_loaded = False
+
+    def _check_nvidia_smi(self):
+        try:
+            res = subprocess.run(["which", "nvidia-smi"], capture_output=True, text=True, timeout=1)
+            self.has_nvidia_smi = (res.returncode == 0)
+        except Exception:
+            self.has_nvidia_smi = False
+
+    def get_detected_devices(self) -> List[Tuple[str, str, Optional[float]]]:
+        """Returns list of (device_id, device_name, initial_temp)."""
+        results = []
+        if self.nvml_loaded:
+            for idx, handle, name in self.nvml_devices:
+                temp = ctypes.c_uint()
+                t_val = None
+                if self.nvml_lib.nvmlDeviceGetTemperature(handle, 0, ctypes.byref(temp)) == 0:
+                    t_val = float(temp.value)
+                results.append((f"nvidia.{idx}", name, t_val))
+            return results
+
+        if self.has_nvidia_smi:
+            try:
+                res = subprocess.run(
+                    ["nvidia-smi", "--query-gpu=index,name,temperature.gpu", "--format=csv,noheader,nounits"],
+                    capture_output=True, text=True, timeout=2
+                )
+                if res.returncode == 0:
+                    for line in res.stdout.strip().splitlines():
+                        parts = [p.strip() for p in line.split(",")]
+                        if len(parts) >= 3:
+                            idx = parts[0]
+                            name = parts[1]
+                            temp_val = float(parts[2])
+                            results.append((f"nvidia.{idx}", name, temp_val))
+            except Exception:
+                pass
+        return results
+
+    def read_temperatures(self) -> Dict[str, float]:
+        """Read current temperature for all Nvidia devices."""
+        readings = {}
+        if self.nvml_loaded:
+            for idx, handle, _ in self.nvml_devices:
+                temp = ctypes.c_uint()
+                if self.nvml_lib.nvmlDeviceGetTemperature(handle, 0, ctypes.byref(temp)) == 0:
+                    readings[f"nvidia.{idx}"] = float(temp.value)
+            return readings
+
+        if self.has_nvidia_smi:
+            try:
+                res = subprocess.run(
+                    ["nvidia-smi", "--query-gpu=index,temperature.gpu", "--format=csv,noheader,nounits"],
+                    capture_output=True, text=True, timeout=1.5
+                )
+                if res.returncode == 0:
+                    for line in res.stdout.strip().splitlines():
+                        parts = [p.strip() for p in line.split(",")]
+                        if len(parts) >= 2:
+                            idx = parts[0]
+                            readings[f"nvidia.{idx}"] = float(parts[1])
+            except Exception:
+                pass
+        return readings
+
+    def close(self):
+        if self.nvml_loaded and self.nvml_lib:
+            try:
+                self.nvml_lib.nvmlShutdown()
+            except Exception:
+                pass
+            self.nvml_loaded = False
+
+
 class SensorManager:
     """Discovers sensors via lm-sensors and manages real-time polling and alarms."""
     def __init__(self, config: Config):
@@ -88,6 +193,9 @@ class SensorManager:
         self.last_beep_time: float = 0.0
         self.is_alarm_active: bool = False
         self.alarming_devices: List[SensorDevice] = []
+
+        # Nvidia GPU monitor (NVML with fallback to nvidia-smi)
+        self.nvidia_monitor = NvidiaMonitor()
 
         # Discover sensors initially
         self.discover_sensors()
@@ -171,7 +279,19 @@ class SensorManager:
                     "sysfs_path": info["path"],
                 }
 
-        # 3. Populate or update self.devices syncing with config
+        # 3. Add Nvidia GPU devices (NVML / nvidia-smi)
+        nv_devices = self.nvidia_monitor.get_detected_devices()
+        for dev_id, name, init_temp in nv_devices:
+            short_name = name.replace("NVIDIA GeForce ", "").replace("NVIDIA ", "").strip()
+            friendly = f"GPU ({short_name})" if short_name else "GPU (Nvidia)"
+            discovered[dev_id] = {
+                "default_name": f"Nvidia {name}",
+                "friendly_name": friendly,
+                "initial_temp": init_temp if init_temp is not None else 45.0,
+                "suggested_threshold": 85.0,
+            }
+
+        # 4. Populate or update self.devices syncing with config
         with self.lock:
             color_idx = 0
             for dev_id, info in discovered.items():
@@ -306,6 +426,14 @@ class SensorManager:
         except Exception:
             pass
 
+        # 3. Read temperatures from Nvidia devices if present
+        if self.nvidia_monitor.nvml_loaded or self.nvidia_monitor.has_nvidia_smi:
+            try:
+                nv_readings = self.nvidia_monitor.read_temperatures()
+                readings.update(nv_readings)
+            except Exception:
+                pass
+
         return readings
 
     def poll_once(self):
@@ -389,6 +517,7 @@ class SensorManager:
         self.running = False
         if self.worker_thread and self.worker_thread.is_alive():
             self.worker_thread.join(timeout=1.0)
+        self.nvidia_monitor.close()
 
     def toggle_sensor(self, dev_id: str) -> bool:
         """Toggle sensor enabled state in real time."""
