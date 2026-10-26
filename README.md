@@ -55,8 +55,7 @@ Temp Top is self-contained with no external Python library dependencies:
 
 ```bash
 # Run directly from the temptop directory
-cd /home/sam/.gemini/antigravity-ide/scratch/temptop
-./temptop.py
+python temptop.py
 
 # Or via the executable symlink
 ./temptop
@@ -64,8 +63,6 @@ cd /home/sam/.gemini/antigravity-ide/scratch/temptop
 # Or run globally via PATH (~/.local/bin)
 temptop
 ```
-
-## Installation
 
 ### Nix Flake
 
@@ -98,8 +95,6 @@ nix develop
 ```
 
 ---
-
-=======
 
 ### CLI Options
 
@@ -156,7 +151,7 @@ Temp Top automatically creates and updates its configuration file:
 ```toml
 # ==============================================================================
 #                           TEMP TOP CONFIGURATION FILE
-#                   Inspired by Psensor & btop hardware monitors
+#                  
 # ==============================================================================
 
 [general]
