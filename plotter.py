@@ -84,53 +84,59 @@ class BraillePlotter:
 
         data_span = max(highest_displayed - lowest_displayed, 1.0)
 
-        # 2. Even Y-axis spacing calculation
-        # Choose temperature step for guide lines (10°C standard, 5°C if tight range, 20°C if huge)
+        # 2. Constrained Y-axis: at most 2°C padding above highest and below lowest
+        padded_min = lowest_displayed - 2.0
+        padded_max = highest_displayed + 2.0
+        padded_span = padded_max - padded_min
+
+        # Choose guide-line step (10°C standard, 5°C for tight ranges, 20°C for huge)
         if data_span <= 14.0 and plot_height >= 10:
             step = 5.0
-        elif (plot_height - 1) * 5.0 < data_span:
+        elif data_span > 80.0:
             step = 20.0
         else:
             step = 10.0
 
-        # S is the number of character rows between adjacent guide lines.
-        # S is strictly an integer >= 1, ensuring 100% equal distance between all guide lines.
-        max_S = max(1, int((plot_height - 1) * step / (data_span + 2.0)))
-        S = max(1, max_S)
-        while (plot_height - 1) * (step / S) < data_span:
-            step *= 2.0
-            S = max(1, int((plot_height - 1) * step / (data_span + 2.0)))
+        # Snap scale bounds to multiples of step for clean guide lines
+        # while staying as close as possible to padded_min/padded_max
+        scale_min = math.floor(padded_min / step) * step
+        scale_max = math.ceil(padded_max / step) * step
 
-        deg_per_row = step / S
-        mid_temp = (lowest_displayed + highest_displayed) / 2.0
-        ref_marker = round(mid_temp / step) * step
+        # If the snapped range is way larger than needed, tighten it
+        # Allow at most ~2° extra beyond data on each side
+        if scale_min < lowest_displayed - 2.0 - step:
+            scale_min = math.floor((lowest_displayed - 2.0) / step) * step
+        if scale_max > highest_displayed + 2.0 + step:
+            scale_max = math.ceil((highest_displayed + 2.0) / step) * step
 
-        # Determine reference marker row so data is comfortably in bounds
-        min_r = math.ceil((highest_displayed - ref_marker) / deg_per_row)
-        max_r = math.floor((plot_height - 1) - (ref_marker - lowest_displayed) / deg_per_row)
+        # Ensure we have at least 2 guide lines for visual reference
+        while (scale_max - scale_min) / step < 2:
+            scale_min -= step
+            scale_max += step
 
-        if min_r <= max_r:
-            ideal_r = (plot_height - 1) / 2.0
-            r_ref = round(max(min_r, min(max_r, ideal_r)))
-        else:
-            r_ref = round((plot_height - 1) / 2.0)
+        # Ensure the range covers data with at least 1° padding
+        if scale_min > lowest_displayed - 1.0:
+            scale_min -= step
+        if scale_max < highest_displayed + 1.0:
+            scale_max += step
 
-        self.temp_min = ref_marker - (plot_height - 1 - r_ref) * deg_per_row
-        self.temp_max = ref_marker + r_ref * deg_per_row
+        self.temp_min = scale_min
+        self.temp_max = scale_max
         temp_span = self.temp_max - self.temp_min
         if temp_span <= 0.001:
             temp_span = 4.0
             self.temp_max = self.temp_min + 4.0
 
-        # Guide line rows: r = r_ref - k * S
-        # Since r_ref and S are integers, r is ALWAYS an integer and spacing is exactly S rows
-        guide_rows: Dict[int, int] = {}  # char_row -> temperature
-        min_k = math.ceil((r_ref - (plot_height - 1)) / S)
-        max_k = math.floor(r_ref / S)
-        for k in range(min_k, max_k + 1):
-            deg = int(round(ref_marker + k * step))
-            r = r_ref - k * S
-            guide_rows[r] = deg
+        # Guide line rows: evenly spaced based on temperature step
+        guide_rows: Dict[int, int] = {}
+        deg = int(math.ceil(self.temp_min / step) * step)
+        while deg <= self.temp_max:
+            # Map temperature to character row (row 0 = top = temp_max)
+            norm = (deg - self.temp_min) / temp_span
+            r = int((1.0 - norm) * (plot_height - 1) + 0.5)
+            if 0 <= r < plot_height:
+                guide_rows[r] = deg
+            deg += int(step)
 
         # Sub-pixel dimensions (2 dots per col, 4 dots per row)
         sub_w = plot_width * 2

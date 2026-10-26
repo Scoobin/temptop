@@ -103,6 +103,8 @@ class Config:
         self.general = dict(DEFAULT_GENERAL_SETTINGS)
         # devices dict: device_id -> dict of properties
         self.devices: Dict[str, Dict[str, Any]] = {}
+        # Ordered list of device IDs for persisting display order
+        self.device_order: list = []
         self.load()
 
     def get_update_frequency_ms(self) -> int:
@@ -142,6 +144,11 @@ class Config:
                             "alarm_enabled": bool(dev_conf.get("alarm_enabled", False)),
                             "alarm_threshold": float(dev_conf.get("alarm_threshold", 85.0)),
                         }
+
+            if "display" in data and isinstance(data["display"], dict):
+                order = data["display"].get("device_order", [])
+                if isinstance(order, list):
+                    self.device_order = [str(x) for x in order]
         except Exception as e:
             # If load fails, log warning and preserve defaults
             sys.stderr.write(f"Warning: Failed to load config from {self.config_path}: {e}\n")
@@ -168,6 +175,8 @@ class Config:
             dev_conf["enabled"] = True
             dev_conf["alarm_enabled"] = False
             dev_conf["alarm_threshold"] = 85.0
+        # Reset display order to default (discovery order)
+        self.device_order = []
         self.save()
 
     def generate_toml_content(self) -> str:
@@ -229,6 +238,20 @@ class Config:
             lines.append(f'color = "{color}"')
             lines.append(f'alarm_enabled = {"true" if alarm_enabled else "false"}')
             lines.append(f"alarm_threshold = {alarm_threshold:.1f}")
+            lines.append("")
+
+        # Save display order if customized
+        if self.device_order:
+            lines.append("# ==============================================================================")
+            lines.append("# DISPLAY ORDER")
+            lines.append("# ------------------------------------------------------------------------------")
+            lines.append("# Custom order of sensors in the graph key and device manager.")
+            lines.append("# Delete this section to reset to default discovery order.")
+            lines.append("# ==============================================================================")
+            lines.append("")
+            lines.append("[display]")
+            order_items = ', '.join(f'"{x}"' for x in self.device_order)
+            lines.append(f"device_order = [{order_items}]")
             lines.append("")
 
         return "\n".join(lines)

@@ -2,7 +2,23 @@
 # Terminal temperature monitoring program by Scoobin.
 
 
-## [0.5.0]
+## [0.6.0]
+
+### Added
+
+- Ability to reset individual sensor names.
+
+### Changed
+
+- Work done on graph scaling.
+
+### Fixed
+
+- Pause program now works.
+- Device order now saves.
+
+
+## [0.5.1]
 
 ### Added
 

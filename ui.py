@@ -245,6 +245,9 @@ class TempTopApp:
         # Available time durations for quick switching: [30s, 1m, 2m, 3m, 5m, 10m, 15m, 20m, 30m, 60m]
         self.plot_durations = [30, 60, 120, 180, 300, 600, 900, 1200, 1800, 3600]
 
+        # Pause state: when paused, freeze the graph at this timestamp
+        self.pause_time: Optional[float] = None
+
         # Setup SIGWINCH handler
         signal.signal(signal.SIGWINCH, self._handle_resize)
 
@@ -272,10 +275,15 @@ class TempTopApp:
                 time_to_refresh = (now - last_render_time) >= update_interval_sec
 
                 if self.ui_mode == "NORMAL":
-                    if user_interacted or self.needs_full_redraw or time_to_refresh:
+                    if not self.sensor_mgr.paused:
+                        if user_interacted or self.needs_full_redraw or time_to_refresh:
+                            self._render()
+                            self.needs_full_redraw = False
+                            last_render_time = now
+                    elif self.needs_full_redraw:
+                        # When paused, only redraw if explicitly requested (e.g. just paused/unpaused)
                         self._render()
                         self.needs_full_redraw = False
-                        last_render_time = now
                 else:
                     # When in modal (e.g. Device Manager): graph MUST NOT update.
                     # Only redraw menu when user interacts or window resizes.
@@ -358,6 +366,13 @@ class TempTopApp:
         # Pause / Resume
         elif key in ("p", "P"):
             self.sensor_mgr.paused = not self.sensor_mgr.paused
+            if self.sensor_mgr.paused:
+                # Record the moment of pausing to freeze graph display
+                self.pause_time = time.time()
+            else:
+                # Unpausing: clear the frozen timestamp so graph resumes live
+                self.pause_time = None
+                self.needs_full_redraw = True
 
         # Open Device Manager modal
         elif key in ("m", "M", "\n", "\r"):
@@ -414,8 +429,11 @@ class TempTopApp:
             # Rename prompt
             self.rename_buffer = curr_dev.display_name
             self.ui_mode = "RENAME_PROMPT"
-        elif key in ("R", "\x7f", "\x08"):
-            # Reset device name to default
+        elif key in ("R",):
+            # Reset single device name to default (capital R only)
+            self.sensor_mgr.reset_sensor_name(curr_dev.device_id)
+        elif key in ("\x7f", "\x08"):
+            # Backspace also resets single device name to default
             self.sensor_mgr.reset_sensor_name(curr_dev.device_id)
         elif key in ("a", "A"):
             # Toggle alarm on/off
@@ -531,7 +549,11 @@ class TempTopApp:
 
         # 2. Render Graph Plot Rows
         duration = self.config.get_plot_time_seconds()
-        now = time.time()
+        # When paused, freeze the graph at the pause timestamp
+        if self.sensor_mgr.paused and self.pause_time is not None:
+            now = self.pause_time
+        else:
+            now = time.time()
         plot_rows, oldest_str, latest_str = self.plotter.render_graph(
             plot_width=plot_width,
             plot_height=plot_height,
@@ -806,17 +828,18 @@ class TempTopApp:
 
         modal_w = min(74, cols - 4)
         inner_w = modal_w - 2
-        modal_h = min(len(dev_list) + 8, lines - 4)
+        modal_h = min(len(dev_list) + 9, lines - 4)
 
         modal_lines: List[str] = []
         # Header
         modal_lines.append(self._modal_top_border("Device Manager & Sensor Settings", modal_w, C_MODAL_BORDER, C_TITLE))
-        modal_lines.append(f"{C_MODAL_BORDER}│{RESET_COLOR}{C_DIM}{pad_visible(truncate_visible('  Navigate: [↑/↓]  Toggle: [Space]  Rename: [R]  Alarm: [A]', inner_w), inner_w)}{RESET_COLOR}{C_MODAL_BORDER}│{RESET_COLOR}")
-        modal_lines.append(f"{C_MODAL_BORDER}│{RESET_COLOR}{C_DIM}{pad_visible(truncate_visible('  Threshold: [+/-]  Color: [C]  Order: [W/S]  Reset: [Bksp]  Exit: [Esc/M]', inner_w), inner_w)}{RESET_COLOR}{C_MODAL_BORDER}│{RESET_COLOR}")
+        modal_lines.append(f"{C_MODAL_BORDER}│{RESET_COLOR}{C_DIM}{pad_visible(truncate_visible('  Navigate: [↑/↓]  Toggle: [Space]  Rename: [E]  Alarm: [A]', inner_w), inner_w)}{RESET_COLOR}{C_MODAL_BORDER}│{RESET_COLOR}")
+        modal_lines.append(f"{C_MODAL_BORDER}│{RESET_COLOR}{C_DIM}{pad_visible(truncate_visible('  Threshold: [+/-]  Color: [C]  Order: [W/S]  Reset Name: [R/Bksp]', inner_w), inner_w)}{RESET_COLOR}{C_MODAL_BORDER}│{RESET_COLOR}")
+        modal_lines.append(f"{C_MODAL_BORDER}│{RESET_COLOR}{C_DIM}{pad_visible(truncate_visible('  Reset ALL: [D/Ctrl+R]  Exit: [Esc/M]', inner_w), inner_w)}{RESET_COLOR}{C_MODAL_BORDER}│{RESET_COLOR}")
         modal_lines.append(f"{C_MODAL_BORDER}├{'─' * inner_w}┤{RESET_COLOR}")
 
         # List rows
-        list_height = max(3, modal_h - 6)
+        list_height = max(3, modal_h - 7)
         start_idx = max(0, min(self.selected_dev_index - list_height // 2, max(0, len(dev_list) - list_height)))
         visible_devs = dev_list[start_idx : start_idx + list_height]
 

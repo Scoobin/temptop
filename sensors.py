@@ -344,6 +344,9 @@ class SensorManager:
         # Save config if new devices were added
         self.config.save()
 
+        # Apply saved display order from config if available
+        self._apply_saved_order()
+
     def _map_sysfs_hwmon(self) -> Dict[str, Dict[str, Any]]:
         """Map sysfs /sys/class/hwmon files for fast polling."""
         mapping: Dict[str, Dict[str, Any]] = {}
@@ -437,10 +440,8 @@ class SensorManager:
         return readings
 
     def poll_once(self):
-        """Perform a single sample poll and update history and alarms."""
-        if self.paused:
-            return
-
+        """Perform a single sample poll and update history and alarms.
+        Always records data even when paused, so unpausing shows the latest readings."""
         now = time.time()
         readings = self.read_temperatures()
 
@@ -449,7 +450,7 @@ class SensorManager:
                 if dev_id in self.devices:
                     self.devices[dev_id].record_reading(temp, now)
 
-            # Check alarms
+            # Check alarms (even when paused, alarms should still work)
             self._update_alarms(now)
 
     def _update_alarms(self, now: float):
@@ -589,6 +590,8 @@ class SensorManager:
                 dev.color = COLOR_NAMES[color_idx % len(COLOR_NAMES)]
                 color_idx += 1
             self.config.reset_to_defaults()
+            # Re-discover to restore default order (config.device_order cleared by reset_to_defaults)
+            self._reorder_by_discovery()
 
     def move_sensor(self, dev_id: str, direction: int) -> bool:
         """Move a sensor up (direction=-1) or down (direction=+1) in the display order.
@@ -613,5 +616,42 @@ class SensorManager:
                 if k in self.config.devices:
                     new_cfg_devices[k] = self.config.devices[k]
             self.config.devices = new_cfg_devices
+            # Persist display order
+            self.config.device_order = list(keys)
             self.config.save()
             return True
+
+    def _apply_saved_order(self):
+        """Reorder self.devices dict to match the saved device_order from config."""
+        saved_order = self.config.device_order
+        if not saved_order:
+            return
+        with self.lock:
+            current_keys = set(self.devices.keys())
+            # Build new order: saved order first (only keys that exist), then any new devices
+            ordered_keys = [k for k in saved_order if k in current_keys]
+            remaining = [k for k in self.devices.keys() if k not in set(ordered_keys)]
+            ordered_keys.extend(remaining)
+            new_devices: Dict[str, SensorDevice] = {}
+            for k in ordered_keys:
+                new_devices[k] = self.devices[k]
+            self.devices = new_devices
+            # Also reorder config.devices
+            new_cfg_devices: Dict[str, Any] = {}
+            for k in ordered_keys:
+                if k in self.config.devices:
+                    new_cfg_devices[k] = self.config.devices[k]
+            self.config.devices = new_cfg_devices
+
+    def _reorder_by_discovery(self):
+        """Restore devices to sorted/discovery order (alphabetical by device_id)."""
+        sorted_keys = sorted(self.devices.keys())
+        new_devices: Dict[str, SensorDevice] = {}
+        for k in sorted_keys:
+            new_devices[k] = self.devices[k]
+        self.devices = new_devices
+        new_cfg_devices: Dict[str, Any] = {}
+        for k in sorted_keys:
+            if k in self.config.devices:
+                new_cfg_devices[k] = self.config.devices[k]
+        self.config.devices = new_cfg_devices
