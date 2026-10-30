@@ -78,65 +78,57 @@ class BraillePlotter:
         if displayed_temps:
             highest_displayed = max(displayed_temps)
             lowest_displayed = min(displayed_temps)
+            # Minimum and maximum graphed area strictly relate to currently displayed graph dots:
+            # - If dots sit in 25-30, show 25 as lowest line (half height of 10° segment)
+            # - Any unused 10° or 5° range where no dots sit is removed
+            scale_min = math.floor(lowest_displayed / 5.0) * 5.0
+            scale_max = math.ceil(highest_displayed / 5.0) * 5.0
         else:
-            highest_displayed = 50.0
-            lowest_displayed = 20.0
+            scale_min = 20.0
+            scale_max = 50.0
 
-        data_span = max(highest_displayed - lowest_displayed, 1.0)
+        if scale_max <= scale_min:
+            scale_max = scale_min + 5.0
 
-        # 2. Constrained Y-axis: at most 2°C padding above highest and below lowest
-        padded_min = lowest_displayed - 2.0
-        padded_max = highest_displayed + 2.0
-        padded_span = padded_max - padded_min
-
-        # Choose guide-line step (10°C standard, 5°C for tight ranges, 20°C for huge)
-        if data_span <= 14.0 and plot_height >= 10:
-            step = 5.0
-        elif data_span > 80.0:
-            step = 20.0
-        else:
-            step = 10.0
-
-        # Snap scale bounds to multiples of step for clean guide lines
-        # while staying as close as possible to padded_min/padded_max
-        scale_min = math.floor(padded_min / step) * step
-        scale_max = math.ceil(padded_max / step) * step
-
-        # If the snapped range is way larger than needed, tighten it
-        # Allow at most ~2° extra beyond data on each side
-        if scale_min < lowest_displayed - 2.0 - step:
-            scale_min = math.floor((lowest_displayed - 2.0) / step) * step
-        if scale_max > highest_displayed + 2.0 + step:
-            scale_max = math.ceil((highest_displayed + 2.0) / step) * step
-
-        # Ensure we have at least 2 guide lines for visual reference
-        while (scale_max - scale_min) / step < 2:
-            scale_min -= step
-            scale_max += step
-
-        # Ensure the range covers data with at least 1° padding
-        if scale_min > lowest_displayed - 1.0:
-            scale_min -= step
-        if scale_max < highest_displayed + 1.0:
-            scale_max += step
-
-        self.temp_min = scale_min
-        self.temp_max = scale_max
+        self.temp_min = float(scale_min)
+        self.temp_max = float(scale_max)
         temp_span = self.temp_max - self.temp_min
         if temp_span <= 0.001:
-            temp_span = 4.0
-            self.temp_max = self.temp_min + 4.0
+            temp_span = 5.0
+            self.temp_max = self.temp_min + 5.0
 
-        # Guide line rows: evenly spaced based on temperature step
+        # Guide lines:
+        # 1. scale_min is always the bottom graph line
+        # 2. Multiples of 10 strictly between scale_min and scale_max are 10° guide lines
+        # 3. scale_max is always the top graph line
+        guide_degs: List[int] = [int(self.temp_min)]
+        d = int(math.floor(self.temp_min / 10.0) * 10) + 10
+        while d < self.temp_max:
+            if d > self.temp_min:
+                guide_degs.append(d)
+            d += 10
+        if int(self.temp_max) > int(self.temp_min):
+            guide_degs.append(int(self.temp_max))
+
         guide_rows: Dict[int, int] = {}
-        deg = int(math.ceil(self.temp_min / step) * step)
-        while deg <= self.temp_max:
-            # Map temperature to character row (row 0 = top = temp_max)
-            norm = (deg - self.temp_min) / temp_span
-            r = int((1.0 - norm) * (plot_height - 1) + 0.5)
-            if 0 <= r < plot_height:
+        for deg in guide_degs:
+            if deg == int(self.temp_max):
+                r = 0
+            elif deg == int(self.temp_min):
+                r = plot_height - 1
+            else:
+                norm = (deg - self.temp_min) / temp_span
+                r = int(round((1.0 - norm) * (plot_height - 1)))
+                r = max(1, min(plot_height - 2, r))
+
+            if r not in guide_rows:
                 guide_rows[r] = deg
-            deg += int(step)
+            else:
+                for offset in (1, -1, 2, -2):
+                    cand = r + offset
+                    if 0 <= cand < plot_height and cand not in guide_rows:
+                        guide_rows[cand] = deg
+                        break
 
         # Sub-pixel dimensions (2 dots per col, 4 dots per row)
         sub_w = plot_width * 2
@@ -178,6 +170,21 @@ class BraillePlotter:
                 latest_x = sub_w - 1
                 latest_y = temp_to_sub_y(history_pts[-1][1])
                 pixel_pts.append((latest_x, latest_y))
+            # If only 1 point is visible, render it as a single dot
+            if len(pixel_pts) == 1:
+                curr_x, curr_y = pixel_pts[0]
+                if 0 <= curr_x < sub_w and 0 <= curr_y < sub_h:
+                    r = curr_y // 4
+                    c = curr_x // 2
+                    cell = (r, c)
+                    if cell not in cell_devs:
+                        cell_devs[cell] = []
+                    if dev_idx not in cell_devs[cell]:
+                        cell_devs[cell].append(dev_idx)
+                    key = (dev_idx, r, c)
+                    if key not in dev_cell_dots:
+                        dev_cell_dots[key] = []
+                    dev_cell_dots[key].append((curr_x, curr_y))
 
             # Connect consecutive points with Bresenham lines
             for i in range(len(pixel_pts) - 1):

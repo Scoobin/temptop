@@ -2,21 +2,33 @@
 # Terminal temperature monitoring program by Scoobin.
 
 
+## [0.7.0]
+
+### Added
+- Additional 5 degree graph markers top and bottom of graph when appropriate (see Changed)
+
+### Changed
+- Graph scaling improvements, with 5 degree increments at top/bottom of graph when appropriate. Purpose is to keep graph tight and limit empty space. 
+- Remove redundant 10 degree markers from top and bottom of graph when there are no displayed measurements in .
+
+### Fixed
+- Text 'PAUSED' is back when paused, which disappeared in last version.
+
+
 ## [0.6.0]
 
 ### Added
 
-- Ability to reset individual sensor names.
+- Ability to reset individual sensor names instead of having to reset all just to reset one.
 
 ### Changed
 
-- Work done on graph scaling.
+- Improved graph scaling (more coming).
 
 ### Fixed
 
-- Pause program now works.
-- Device order now saves.
-
+- Pause program now work. 
+- Device order now saves. 
 
 ## [0.5.1]
 

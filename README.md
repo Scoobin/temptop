@@ -3,12 +3,12 @@
 > A Linux terminal hardware temperature monitor and Braille grapher inspired by **Psensor** and **btop**.
 
 ```
-╭─ Temp Top ──────────────────────────────────┤ Rate: 2000ms [+/-] ├─┤ Time: 5m [</>] ├─╮
-│ 68°C┤┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄│
-│ 64°C┤┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄⣀⣀⣀⣀⠤⠤⠤⠔⠒⠒⠒⠉⠉⠉┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄│
-│ 60°C┤┄┄┄┄⢀⣀⣀⣀⠤⠤⠤⠔⠒⠒⠊⠉⠉⠉┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄│
-│ 56°C┤⠒⠊⠉⠉⠁┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄│
-│ 52°C┤┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄│
+╭─ temptop ───────────────────────────────────┤ Rate: 2000ms [+/-] ├─┤ Time: 5m [</>] ├─╮
+│ 65°C┤┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄│
+│ 60°C┤┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄⣀⣀⣀⣀⠤⠤⠤⠔⠒⠒⠒⠉⠉⠉┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄│
+│ 50°C┤┄┄┄┄⢀⣀⣀⣀⠤⠤⠤⠔⠒⠒⠊⠉⠉⠉┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄│
+│ 40°C┤⠒⠊⠉⠉⠁┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄│
+│ 35°C┤┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄│
 ├─ 09:35:16 ────────────────────────────────────────────────────────── 09:40:16 [5m] ─┤
 │ [1] [✓] ● CPU (Tctl)       60.0° M:64°  [3] [✓] ● GPU (RTX 3060)     52.0° M:55°   │
 │ [2] [✓] ● NVMe (Overall)   41.0° M:44°  [4] [✓] ● Motherboard        64.0° M:66°   │
@@ -24,8 +24,9 @@
 - **Hardware Integration & Zero-Overhead Polling**:
   - **Linux sysfs & lm-sensors**: Auto-detects all CPUs, motherboards, WiFi, and NVMe drives via direct `/sys/class/hwmon` acceleration with sub-millisecond reads.
   - **Nvidia GPU Support**: Direct NVML library bindings via standard library `ctypes` (`libnvidia-ml.so`) with fallback to `nvidia-smi`. Fully synchronized with the user-selected update frequency.
-- **Dynamic Temperature Range (±2°C padding)**:
-  - Graph Y-axis strictly bounds precisely **+2°C above the highest** currently shown curve and **-2°C below the lowest** currently shown curve to maximize resolution and contrast.
+- **Dynamic Temperature Range & Half-Height 5° Segments**:
+  - Graph Y-axis strictly bounds to currently displayed graph dots, automatically removing unused 10° ranges at the top and bottom.
+  - Renders a clean half-height 5° segment at the bottom (e.g. 25°C, 35°C) and/or top (e.g. 65°C, 75°C, 85°C) whenever dots sit within those ranges.
 - **Configurable Time Horizons**:
   - 10 selectable plot durations: **30s, 1m, 2m, 3m, 5m, 10m, 15m, 20m, 30m, and 60m**.
 - **Accurate Time Range Tracking**:

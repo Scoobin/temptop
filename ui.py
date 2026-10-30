@@ -82,6 +82,8 @@ C_MODAL_SEL = "\033[48;2;50;65;90m"     # Modal selected row
 C_MODAL_BORDER = "\033[38;2;130;170;255m"
 C_CURR_TEMP = "\033[1;38;2;255;140;0m"   # Bright orange for current temperature
 C_MAX_TEMP = "\033[38;2;205;40;40m"     # Red slightly darker than bright red for Max temp
+C_TITLE_TOP = "\033[1;38;2;255;140;0m"   # Bright orange for 'top' in temptop
+C_PAUSED = "\033[1;38;2;255;235;59m"     # Yellow font CAPS for PAUSED announcement
 
 
 class TerminalManager:
@@ -280,8 +282,8 @@ class TempTopApp:
                             self._render()
                             self.needs_full_redraw = False
                             last_render_time = now
-                    elif self.needs_full_redraw:
-                        # When paused, only redraw if explicitly requested (e.g. just paused/unpaused)
+                    elif user_interacted or self.needs_full_redraw:
+                        # When paused, redraw if requested (e.g. just paused/unpaused) or key pressed
                         self._render()
                         self.needs_full_redraw = False
                 else:
@@ -369,6 +371,7 @@ class TempTopApp:
             if self.sensor_mgr.paused:
                 # Record the moment of pausing to freeze graph display
                 self.pause_time = time.time()
+                self.needs_full_redraw = True
             else:
                 # Unpausing: clear the frozen timestamp so graph resumes live
                 self.pause_time = None
@@ -600,15 +603,19 @@ class TempTopApp:
         window_sec = self.config.get_plot_time_seconds()
         window_fmt = self._format_duration(window_sec)
 
+        # Application title: 'temp' in cyan, 'top' in orange
+        app_title = f"{C_TITLE}temp{C_TITLE_TOP}top"
+
         # Check for alarm alert
         if self.sensor_mgr.is_alarm_active and self.sensor_mgr.alarming_devices:
             first_alarm = self.sensor_mgr.alarming_devices[0]
             alarm_str = f" ⚠️  ALARM: {first_alarm.display_name} @ {first_alarm.current_temp:.1f}°C (>{first_alarm.alarm_threshold:.1f}°C) "
-            title_section = f"{C_ALARM_WARN}╭─ [TEMP TOP] ─{alarm_str}"
+            paused_str = f" ─┤ {C_PAUSED}PAUSED{C_ALARM_WARN} ├" if self.sensor_mgr.paused else ""
+            title_section = f"{C_ALARM_WARN}╭─ [{app_title}{C_ALARM_WARN}]{paused_str} ─{alarm_str}"
         elif self.sensor_mgr.paused:
-            title_section = f"{C_BORDER}╭─ {C_TITLE}Temp Top{C_BORDER} ─┤ {C_HIGHLIGHT}PAUSED{C_BORDER} ├"
+            title_section = f"{C_BORDER}╭─ {app_title}{C_BORDER} ─┤ {C_PAUSED}PAUSED{C_BORDER} ├"
         else:
-            title_section = f"{C_BORDER}╭─ {C_TITLE}Temp Top{C_BORDER} ─"
+            title_section = f"{C_BORDER}╭─ {app_title}{C_BORDER} ─"
 
         if cols >= 80:
             ctrl_section = f"┤ Rate: {C_TEXT}{rate_ms}ms{C_DIM} [+/-]{C_BORDER} ├─┤ Time: {C_TEXT}{window_fmt}{C_DIM} [</>]{C_BORDER} ├─╮{RESET_COLOR}"

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "temptop"
-version = "0.6.0"
+version = "0.7.0"
 description = "A Linux terminal hardware temperature monitor and Braille grapher inspired by Psensor and btop"
 readme = "README.md"
 requires-python = ">=3.11"

@@ -26,7 +26,7 @@ from config import Config, DEFAULT_CONFIG_PATH
 from sensors import SensorManager
 from ui import TempTopApp
 
-__version__ = "1.0.0"
+__version__ = "0.7.0"
 
 
 def list_sensors(config_path: str = None):
