@@ -110,33 +110,59 @@ class BraillePlotter:
         if int(self.temp_max) > int(self.temp_min):
             guide_degs.append(int(self.temp_max))
 
-        guide_rows: Dict[int, int] = {}
-        for deg in guide_degs:
-            if deg == int(self.temp_max):
-                r = 0
-            elif deg == int(self.temp_min):
-                r = plot_height - 1
-            else:
-                norm = (deg - self.temp_min) / temp_span
-                r = int(round((1.0 - norm) * (plot_height - 1)))
-                r = max(1, min(plot_height - 2, r))
+        # Intervals between guide lines from top to bottom
+        intervals = []
+        for i in range(len(guide_degs) - 1, 0, -1):
+            top_deg = guide_degs[i]
+            bot_deg = guide_degs[i - 1]
+            weight = (top_deg - bot_deg) / 5.0
+            intervals.append((top_deg, bot_deg, weight))
 
-            if r not in guide_rows:
-                guide_rows[r] = deg
-            else:
-                for offset in (1, -1, 2, -2):
-                    cand = r + offset
-                    if 0 <= cand < plot_height and cand not in guide_rows:
-                        guide_rows[cand] = deg
-                        break
+        total_weight = sum(w for _, _, w in intervals)
+        total_span = max(1, plot_height - 1)
+
+        # Distribute row heights among intervals using largest remainder method
+        # so 10° intervals are as equal as possible and 5° intervals are half height
+        if total_weight > 0 and len(intervals) > 0:
+            quotas = [total_span * (w / total_weight) for _, _, w in intervals]
+            floors = [int(math.floor(q)) for q in quotas]
+            remainders = [(quotas[i] - floors[i], i) for i in range(len(quotas))]
+            remainders.sort(key=lambda x: x[0], reverse=True)
+
+            rem_to_dist = total_span - sum(floors)
+            heights = list(floors)
+            for k in range(rem_to_dist):
+                idx = remainders[k][1]
+                heights[idx] += 1
+
+            deg_to_row = {guide_degs[-1]: 0}
+            guide_rows: Dict[int, int] = {0: guide_degs[-1]}
+            cur_r = 0
+            for idx, (top_deg, bot_deg, _) in enumerate(intervals):
+                cur_r += heights[idx]
+                deg_to_row[bot_deg] = cur_r
+                guide_rows[cur_r] = bot_deg
+        else:
+            deg_to_row = {int(self.temp_max): 0, int(self.temp_min): plot_height - 1}
+            guide_rows = {0: int(self.temp_max), plot_height - 1: int(self.temp_min)}
 
         # Sub-pixel dimensions (2 dots per col, 4 dots per row)
         sub_w = plot_width * 2
         sub_h = plot_height * 4
 
-        # Helper to map temperature to sub-row y
+        # Helper to map temperature to sub-row y with exact guide-line alignment
         def temp_to_sub_y(temp: float) -> int:
-            norm = (temp - self.temp_min) / temp_span
+            t_clamped = max(self.temp_min, min(self.temp_max, temp))
+            for top_deg, bot_deg, _ in intervals:
+                if bot_deg <= t_clamped <= top_deg:
+                    span = top_deg - bot_deg
+                    frac = (t_clamped - bot_deg) / span if span > 0 else 0.0
+                    r_top = deg_to_row[top_deg]
+                    r_bot = deg_to_row[bot_deg]
+                    cont_r = r_bot - frac * (r_bot - r_top)
+                    sub_y = int(cont_r * 4.0 + 1.5)
+                    return max(0, min(sub_h - 1, sub_y))
+            norm = (temp - self.temp_min) / temp_span if temp_span > 0 else 0.0
             norm = max(0.0, min(1.0, norm))
             return int((1.0 - norm) * (sub_h - 1))
 

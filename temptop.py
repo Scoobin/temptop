@@ -26,7 +26,7 @@ from config import Config, DEFAULT_CONFIG_PATH
 from sensors import SensorManager
 from ui import TempTopApp
 
-__version__ = "0.7.0"
+__version__ = "0.8.0"
 
 
 def list_sensors(config_path: str = None):
@@ -53,7 +53,7 @@ Keybindings inside Temp Top:
   1 - 9         Toggle individual sensors on/off the graph
   + / -         Increase / decrease sample frequency (250ms steps, down to 100ms)
   > / < (w/W)   Increase / decrease graphed plot time window (30s to 60m)
-  M / Enter     Open Device Manager (rename sensors, toggle alarms, change colors)
+  M / Enter     Open Sensor Settings (rename sensors, toggle alarms, change colors)
   P             Pause / resume graph plotting
   S             Save configuration immediately
   D / Ctrl+R    Reset all settings, colors, and device names to factory defaults

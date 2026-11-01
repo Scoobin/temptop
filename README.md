@@ -38,10 +38,10 @@
   - **Disabled Sensor Filtering**: Sensors that are disabled are excluded from the main key on subsequent runs, reclaiming vertical rows for the graph.
   - **Dynamic Column Packing**: Automatically packs more devices per line when names are shortened by the user.
   - **Clean Spacing**: One blank separator row between sensor devices and bottom navigation controls.
-- **Full-Featured Device Manager (`M` or `Enter`)**:
+- **Full-Featured Sensor Settings (`M` or `Enter`)**:
   - Seamless navigation with `Up`/`Down`, `k`/`j`, `PageUp`/`PageDown`, and `Home`/`End`.
   - Live graph display freezes cleanly while modals are open; upon exiting, graph refreshes with all background data gathered while in the menu.
-  - Rename sensors, toggle visibility, adjust alarm thresholds, and cycle colors.
+  - Rename sensors, toggle visibility, adjust alarm thresholds with indicators, and cycle colors.
 - **Audible & Visual Alarms**:
   - Optional terminal bell (`\a`) and alert header banner when any sensor exceeds its threshold.
 - **Configuration File**:
@@ -120,7 +120,7 @@ Options:
 | `1` – `9` | **Toggle Sensor**: Immediately show/hide sensors 1 through 9 |
 | `+` / `-` | **Sample Frequency**: Increase / decrease sample interval by 250ms (down to 100ms) |
 | `>` / `<` (or `w` / `W`) | **Plot Duration**: Cycle plot time window (30s, 1m, 2m, 3m, 5m, 10m, 15m, 20m, 30m, 60m) |
-| `M` or `Enter` | **Device Manager**: Open interactive menu to rename sensors, toggle alarms, edit thresholds, and change colors |
+| `M` or `Enter` | **Sensor Settings**: Open interactive menu to rename sensors, toggle alarms, edit thresholds, and change colors |
 | `P` | **Pause / Resume**: Freeze live graph plotting for inspection |
 | `S` | **Save Settings**: Force save current settings to configuration file |
 | `D` or `Ctrl+R` | **Reset Defaults**: Prompt to reset all settings, names, colors, and alarms to factory defaults |
@@ -129,19 +129,20 @@ Options:
 
 ---
 
-## Device Manager Modal (`M` or `Enter`)
+## Sensor Settings Modal (`M` or `Enter`)
 
-When inside the Device Manager:
+When inside Sensor Settings:
 - `Up` / `Down` (`k` / `j`): Select sensor
 - `PageUp` / `PageDown`: Jump by 5 sensors
 - `Home` / `End`: Jump to first / last sensor
 - `Space`: Toggle visibility on graph
-- `R`: Rename sensor (opens interactive text entry prompt)
+- `E` / `R`: Rename sensor (opens interactive text entry prompt)
 - `Backspace`: Revert sensor name back to default hardware name
 - `A`: Toggle threshold alarm on/off
 - `+` / `-` (`Right` / `Left`): Adjust alarm threshold temperature (±1°C)
 - `C`: Cycle line color through the 16-color palette
-- `Enter` / `Esc` / `M` / `Q`: Close manager and return to graph
+- `W` / `S`: Change display order of sensors
+- `Enter` / `Esc` / `M` / `Q`: Close settings and return to graph
 
 ---
 

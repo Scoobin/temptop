@@ -2,6 +2,23 @@
 # Terminal temperature monitoring program by Scoobin.
 
 
+## [0.8.0]
+
+### Added
+- Show alarm icon (`🔔`) and configured alarm threshold in the 'Sensor Settings' menu for enabled alarms.
+
+### Changed
+- Renamed 'Device Manager & Sensor Settings' to 'Sensor Settings'.
+- Removed alarm icons from the main page device key; alarms are now cleanly displayed in 'Sensor Settings'.
+- For sensors with alarm disabled, alarm column remains empty until enabled.
+- Horizontally centered the device key and temperatures displayed below the graph.
+- Horizontally centered the bottom navigation shortcut menu.
+- Improved graph height spacing between horizontal 10 degree lines for near-even spacing across window heights (~18-22 rows), with 5 degree increments half-height.
+
+### Fixed
+- Fixed column alignment in the 'Sensor Settings' table (colour and alarm columns now align vertically with precision).
+
+
 ## [0.7.0]
 
 ### Added
